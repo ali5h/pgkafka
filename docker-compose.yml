@@ -1,0 +1,36 @@
+version: '3.4'
+
+services:
+    db:
+      build:
+        context: db
+        target: db
+      environment:
+        POSTGRES_PASSWORD: example
+      ports:
+        - 5432:5432
+      volumes:
+        - ./db/postgres.conf:/etc/postgresql/postgresql.conf
+        - ./db/pg_hba.conf:/etc/postgresql/pg_hba.conf
+        - root:/root
+        - data:/var/lib/postgresql/data
+      command: -c 'config_file=/etc/postgresql/postgresql.conf' -c 'hba_file=/etc/postgresql/pg_hba.conf'
+
+    kafka:
+      image: spotify/kafka
+      environment:
+        ADVERTISED_HOST: $HOSTNAME
+        ADVERTISED_PORT: 9092
+      ports:
+        - 2181:2181
+        - 9092:9092
+
+    pgkafka:
+      image: pgkafka
+      build:
+        context: .
+      command: pgkafka -brokers kafka -postgres postgres://postgres@db/postgres
+
+volumes:
+  root:
+  data:
